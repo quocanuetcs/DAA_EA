@@ -1,7 +1,8 @@
 import random
 
-INIT_POPULATION = 100
+INIT_POPULATION = 200
 MUTATION_PROBABILITY = 0.1
+MAX_CONTINOUS_GENERATION = 30
 RECOMBINATION_PROBABILITY = 0.7
 
 class Item():
@@ -65,14 +66,9 @@ def choose_parent(population):
 
 def recombine(n, father, mother):
     if random.uniform(0, 1) <= RECOMBINATION_PROBABILITY:
-        child1 = []
-        child2 = []
-        for i in range(n // 2 + 1):
-            child1.append(father[1])
-            child2.append(mother[1])
-        for i in range(n // 2 + 1, n):
-            child1.append(mother[i])
-            child2.append(father[i])
+        pivot = random.randint(0, n-1)
+        child1 = father[:pivot] + mother[pivot:]
+        child2 = mother[:pivot] + father[pivot:]
         return child1, child2
     else:
         return father, mother
@@ -89,34 +85,36 @@ if __name__ == '__main__':
 
     stop = False
     max_fitness = 0
-    continuous_generation = 0
     max_genotype = None
+    continuous_generation = 0
 
     population = init_population(n, items)
     while not(stop):
-        children = []
-        while (len(children)<100):
+        population = sorted(population, reverse=True)
+        new_population = population[:int(INIT_POPULATION/100*10)]
+        while (len(new_population)<INIT_POPULATION):
             father = choose_parent(population)
             mother = choose_parent(population)
             child1, child2 = recombine(n, father, mother)
             child1 = mutate(child1)
             child2 = mutate(child2)
 
-            children.append((calculate_fitness(child1, items), child1))
-            children.append((calculate_fitness(child1, items), child2))
+            new_population.append((calculate_fitness(child1, items), child1))
+            new_population.append((calculate_fitness(child1, items), child2))
 
-        population = children
+        population = new_population
         population = sorted(population, reverse=True)
         best_fitness, best_child = population[0]
+        print(best_fitness)
 
-        if best_fitness> max_fitness:
+        if best_fitness > max_fitness:
             max_fitness = best_fitness
-            continuous_generation = 0
             max_genotype = best_child
+            continuous_generation = 0
         else:
             continuous_generation += 1
 
-        if continuous_generation>25:
+        if continuous_generation>MAX_CONTINOUS_GENERATION:
             stop = True
 
     print(max_fitness)
